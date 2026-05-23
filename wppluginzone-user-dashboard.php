@@ -4,7 +4,7 @@
  * Plugin Name: WPPluginZone User Dashboard
  * Plugin URI: https://wppluginzone.com
  * Description: A comprehensive user dashboard plugin with WooCommerce integration
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: WPPluginZone
  * Author URI: https://wppluginzone.com
  * License: GPL v2 or later
@@ -49,7 +49,7 @@ class WPPluginZoneUserDashboard
             'wppluginzone-dashboard-styles',
             plugin_dir_url(__FILE__) . 'assets/dashboard-styles.css',
             array(),
-            '1.0.0'
+            '1.0.2'
         );
     }
 
@@ -4913,4 +4913,1754 @@ function enqueue_store_credits_scripts() {
     }
 }
 add_action('wp_enqueue_scripts', 'enqueue_store_credits_scripts');
+
+/**
+ * GotPrint-style product configurator for PixelPrint A-Frame Signs.
+ */
+function wppz_aframe_product_ids() {
+    return apply_filters('wppz_aframe_product_ids', array(3305));
+}
+
+function wppz_is_aframe_product_context($product_id = 0) {
+    $product_id = $product_id ? absint($product_id) : absint(get_the_ID());
+
+    if (!$product_id) {
+        return false;
+    }
+
+    $product_ids = array_map('absint', wppz_aframe_product_ids());
+    $product_slug = get_post_field('post_name', $product_id);
+
+    return in_array($product_id, $product_ids, true) || 'a-frame-signs' === $product_slug;
+}
+
+function wppz_aframe_size_options_by_shape() {
+    return array(
+        'Rectangle' => array(
+            '6" x 18"',
+            '6" x 20"',
+            '6" x 24"',
+            '6" x 30"',
+            '8" x 10"',
+            '8" x 12"',
+            '8.5" x 11"',
+            '9" x 24"',
+            '10" x 12"',
+            '10" x 14"',
+            '10" x 18"',
+            '10" x 20"',
+            '11" x 14"',
+            '11" x 19"',
+            '12" x 16"',
+            '12" x 18"',
+            '12" x 24"',
+            '16" x 20"',
+            '16" x 23"',
+            '18" x 20"',
+            '18" x 24"',
+            '18" x 30"',
+            '18" x 36"',
+            '20" x 30"',
+            '20" x 40"',
+            '22" x 23"',
+            '22" x 28"',
+            '24" x 30"',
+            '24" x 36"',
+        ),
+        'Rounded Rectangle' => array(
+            '6" x 18"',
+            '6" x 20"',
+            '6" x 24"',
+            '6" x 30"',
+            '8" x 10"',
+            '8" x 12"',
+            '8.5" x 11"',
+            '9" x 24"',
+            '10" x 12"',
+            '10" x 14"',
+            '10" x 18"',
+            '10" x 20"',
+            '11" x 14"',
+            '11" x 19"',
+            '12" x 16"',
+            '12" x 18"',
+            '12" x 24"',
+            '16" x 20"',
+            '16" x 23"',
+            '18" x 20"',
+            '18" x 24"',
+            '18" x 30"',
+            '18" x 36"',
+            '20" x 30"',
+            '20" x 40"',
+            '22" x 23"',
+            '22" x 28"',
+            '24" x 30"',
+            '24" x 36"',
+        ),
+        'Square' => array('8" x 8"', '10" x 10"', '12" x 12"', '14" x 14"', '16" x 16"', '18" x 18"', '20" x 20"', '23" x 23"', '24" x 24"'),
+        'Rounded Square' => array('8" x 8"', '10" x 10"', '12" x 12"', '14" x 14"', '16" x 16"', '18" x 18"', '20" x 20"', '23" x 23"', '24" x 24"'),
+        'Circle' => array('12" x 12"', '16" x 16"', '18" x 18"', '23" x 23"', '24" x 24"'),
+        'Half Circle' => array('8" x 10"', '9" x 18"', '11" x 14"', '18" x 24"', '20" x 30"', '20" x 36"', '22" x 28"', '24" x 36"', '12" x 24"', '14" x 28"', '15" x 30"', '18" x 36"'),
+        'Half Arch' => array('8" x 10"', '9" x 18"', '11" x 14"', '18" x 24"', '20" x 30"', '20" x 36"', '22" x 28"', '24" x 36"'),
+        'House' => array('23" x 23"'),
+        'Apartment' => array('23" x 23"'),
+        'Star' => array('22" x 23"'),
+        'Octagon' => array('23" x 23"'),
+        'Arrow' => array('18" x 24"'),
+        'Oval' => array('16" x 23"'),
+    );
+}
+
+function wppz_aframe_all_size_options() {
+    $sizes = array();
+
+    foreach (wppz_aframe_size_options_by_shape() as $shape_sizes) {
+        $sizes = array_merge($sizes, $shape_sizes);
+    }
+
+    return array_values(array_unique($sizes));
+}
+
+function wppz_aframe_config_options() {
+    return array(
+        'material' => array(
+            'label' => 'Material',
+            'type' => 'select',
+            'default' => 'Acrylic',
+            'options' => array('Acrylic'),
+        ),
+        'thickness' => array(
+            'label' => 'Thickness',
+            'type' => 'radio',
+            'default' => '1/4"',
+            'options' => array('1/4"'),
+        ),
+        'material_color' => array(
+            'label' => 'Material Color',
+            'type' => 'select',
+            'default' => 'Transparent',
+            'options' => array('Transparent'),
+        ),
+        'shape' => array(
+            'label' => 'Shape',
+            'type' => 'select',
+            'default' => 'Rectangle',
+            'options' => array(
+                'Rectangle',
+                'Rounded Rectangle',
+                'Square',
+                'Rounded Square',
+                'Circle',
+                'Half Circle',
+                'Half Arch',
+                'House',
+                'Apartment',
+                'Star',
+                'Octagon',
+                'Arrow',
+                'Oval',
+            ),
+        ),
+        'size' => array(
+            'label' => 'Size',
+            'type' => 'select',
+            'default' => '6" x 24"',
+            'options' => wppz_aframe_all_size_options(),
+        ),
+        'orientation' => array(
+            'label' => 'Orientation',
+            'type' => 'orientation',
+            'default' => 'Horizontal',
+            'options' => array('Horizontal', 'Vertical'),
+        ),
+        'print' => array(
+            'label' => 'Print',
+            'type' => 'radio',
+            'default' => 'Front',
+            'help' => 'This product prints on the front side only.',
+            'options' => array('Front'),
+        ),
+        'hole_drilling' => array(
+            'label' => 'Hole Drilling',
+            'type' => 'select',
+            'default' => 'None',
+            'options' => array(
+                'None',
+                '4 Corners',
+                'Top 2 Corners',
+                'Top & Bottom Center',
+                '4 Corners & Top & Bottom Center',
+            ),
+        ),
+        'accessories' => array(
+            'label' => 'Accessories',
+            'type' => 'select',
+            'default' => 'None',
+            'options' => array('None', '3M Command Strip (pack of 2)'),
+        ),
+        'quantity' => array(
+            'label' => 'Quantity',
+            'type' => 'select',
+            'default' => '',
+            'required' => true,
+            'options' => array_map('strval', range(1, 150)),
+        ),
+    );
+}
+
+function wppz_aframe_config_labels() {
+    return array(
+        'material' => 'Material',
+        'thickness' => 'Thickness',
+        'material_color' => 'Material Color',
+        'shape' => 'Shape',
+        'size' => 'Size',
+        'orientation' => 'Orientation',
+        'print' => 'Print',
+        'hole_drilling' => 'Hole Drilling',
+        'accessories' => 'Accessories',
+        'quantity' => 'Quantity',
+        'artwork_method' => 'Artwork Method',
+        'design_summary' => 'Online Design',
+    );
+}
+
+function wppz_aframe_sanitize_config($raw_config) {
+    $raw_config = is_array($raw_config) ? $raw_config : array();
+    $config = array();
+
+    foreach (wppz_aframe_config_options() as $key => $field) {
+        $value = isset($raw_config[$key]) ? sanitize_text_field(wp_unslash($raw_config[$key])) : $field['default'];
+
+        if (!in_array($value, $field['options'], true)) {
+            $value = $field['default'];
+        }
+
+        $config[$key] = $value;
+    }
+
+    $shape_sizes = wppz_aframe_size_options_by_shape();
+
+    if (!empty($config['shape']) && isset($shape_sizes[$config['shape']]) && !in_array($config['size'], $shape_sizes[$config['shape']], true)) {
+        $available_sizes = $shape_sizes[$config['shape']];
+        $config['size'] = reset($available_sizes);
+    }
+
+    if (!in_array($config['shape'], array('Rectangle', 'Square'), true)) {
+        $config['hole_drilling'] = 'None';
+    }
+
+    $artwork_method = isset($raw_config['artwork_method']) ? sanitize_text_field(wp_unslash($raw_config['artwork_method'])) : '';
+    $allowed_artwork_methods = array('Upload Front', 'Design Online', 'No artwork selected');
+    $config['artwork_method'] = in_array($artwork_method, $allowed_artwork_methods, true) ? $artwork_method : 'No artwork selected';
+
+    if (!empty($raw_config['design_summary'])) {
+        $config['design_summary'] = sanitize_text_field(wp_unslash($raw_config['design_summary']));
+    }
+
+    return $config;
+}
+
+function wppz_aframe_field_id($key) {
+    return 'wppz_aframe_' . sanitize_key($key);
+}
+
+function wppz_aframe_render_help_button($field) {
+    if (empty($field['help'])) {
+        return;
+    }
+
+    ?>
+    <button type="button" class="wppz-gp-help" aria-label="<?php echo esc_attr('More information about ' . $field['label']); ?>" data-wppz-help="<?php echo esc_attr($field['help']); ?>">
+        <span aria-hidden="true">?</span>
+    </button>
+    <?php
+}
+
+function wppz_aframe_render_select_field($key, $field) {
+    $field_id = wppz_aframe_field_id($key);
+    $is_required = !empty($field['required']);
+    $has_value = '' !== (string) $field['default'];
+    $classes = array('wppz-gp-field');
+
+    if ($is_required) {
+        $classes[] = 'is-required';
+        $classes[] = $has_value ? 'is-complete' : 'is-empty';
+    }
+
+    ?>
+    <div class="<?php echo esc_attr(implode(' ', $classes)); ?>" data-wppz-field="<?php echo esc_attr($key); ?>" <?php echo $is_required ? 'data-wppz-required="true"' : ''; ?>>
+        <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label']); ?></label>
+        <span class="wppz-gp-valid" aria-hidden="true"></span>
+        <?php if ($is_required) : ?>
+            <span class="wppz-gp-required-badge"><?php echo esc_html__('Required', 'wppluginzone-user-dashboard'); ?></span>
+        <?php endif; ?>
+        <?php wppz_aframe_render_help_button($field); ?>
+        <select id="<?php echo esc_attr($field_id); ?>" name="wppz_aframe_config[<?php echo esc_attr($key); ?>]" <?php echo $is_required ? 'aria-required="true"' : ''; ?>>
+            <option value="" hidden <?php selected('', $field['default']); ?>><?php echo esc_html__('Please select an option', 'wppluginzone-user-dashboard'); ?></option>
+            <?php foreach ($field['options'] as $option) : ?>
+                <option value="<?php echo esc_attr($option); ?>" <?php selected($option, $field['default']); ?>>
+                    <?php echo esc_html($option); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php
+}
+
+function wppz_aframe_render_orientation_field($key, $field) {
+    ?>
+    <fieldset class="wppz-gp-orientation-field" data-wppz-field="<?php echo esc_attr($key); ?>">
+        <legend><?php echo esc_html($field['label']); ?></legend>
+        <div class="wppz-gp-orientation-options">
+            <?php foreach ($field['options'] as $index => $option) : ?>
+                <?php
+                $field_id = wppz_aframe_field_id($key . '_' . $index);
+                $icon_class = 'Vertical' === $option ? 'is-vertical' : 'is-horizontal';
+                ?>
+                <label class="wppz-gp-orientation-option" for="<?php echo esc_attr($field_id); ?>">
+                    <input id="<?php echo esc_attr($field_id); ?>" type="radio" name="wppz_aframe_config[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($option); ?>" <?php checked($option, $field['default']); ?>>
+                    <span class="wppz-gp-orientation-icon <?php echo esc_attr($icon_class); ?>" aria-hidden="true"></span>
+                    <span><?php echo esc_html($option); ?></span>
+                </label>
+            <?php endforeach; ?>
+        </div>
+    </fieldset>
+    <?php
+}
+
+function wppz_aframe_render_radio_field($key, $field) {
+    ?>
+    <fieldset class="wppz-gp-radio-field" data-wppz-field="<?php echo esc_attr($key); ?>">
+        <legend><?php echo esc_html($field['label']); ?></legend>
+        <?php wppz_aframe_render_help_button($field); ?>
+        <div class="wppz-gp-radio-options">
+            <?php foreach ($field['options'] as $index => $option) : ?>
+                <?php $field_id = wppz_aframe_field_id($key . '_' . $index); ?>
+                <label class="wppz-gp-radio-option" for="<?php echo esc_attr($field_id); ?>">
+                    <input id="<?php echo esc_attr($field_id); ?>" type="radio" name="wppz_aframe_config[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($option); ?>" <?php checked($option, $field['default']); ?>>
+                    <span class="wppz-gp-radio-mark" aria-hidden="true"></span>
+                    <span><?php echo esc_html($option); ?></span>
+                </label>
+            <?php endforeach; ?>
+        </div>
+    </fieldset>
+    <?php
+}
+
+function wppz_aframe_render_acrylic_note() {
+    ?>
+    <div class="wppz-gp-note">
+        <span class="wppz-gp-note-icon" aria-hidden="true">i</span>
+        <p><strong><?php echo esc_html__('Note:', 'wppluginzone-user-dashboard'); ?></strong> <?php echo esc_html__('White ink is not compatible with this paper stock. Any white elements on submitted design files will not be visible in final prints.', 'wppluginzone-user-dashboard'); ?></p>
+    </div>
+    <?php
+}
+
+function wppz_aframe_render_config_field($key, $field) {
+    if ('orientation' === $field['type']) {
+        wppz_aframe_render_orientation_field($key, $field);
+        return;
+    }
+
+    if ('radio' === $field['type']) {
+        wppz_aframe_render_radio_field($key, $field);
+        return;
+    }
+
+    wppz_aframe_render_select_field($key, $field);
+}
+
+function wppz_render_aframe_product_configurator() {
+    global $product;
+
+    if (!$product || !wppz_is_aframe_product_context($product->get_id())) {
+        return;
+    }
+
+    $base_price = (float) $product->get_price();
+    $currency_symbol = html_entity_decode(get_woocommerce_currency_symbol(), ENT_QUOTES, get_bloginfo('charset'));
+    $fields = wppz_aframe_config_options();
+
+    ?>
+    <div class="wppz-gp-configurator" data-base-price="<?php echo esc_attr($base_price); ?>" data-currency-symbol="<?php echo esc_attr($currency_symbol); ?>">
+        <?php wp_nonce_field('wppz_aframe_config', 'wppz_aframe_config_nonce'); ?>
+        <input type="hidden" name="wppz_aframe_config[artwork_method]" value="No artwork selected" data-wppz-artwork-method>
+        <input type="hidden" name="wppz_aframe_config[design_summary]" value="" data-wppz-design-summary>
+        <input type="hidden" name="wppz_aframe_design_data" value="" data-wppz-design-data>
+
+        <div class="wppz-gp-fields">
+            <?php foreach ($fields as $key => $field) : ?>
+                <?php wppz_aframe_render_config_field($key, $field); ?>
+                <?php if ('material_color' === $key) : ?>
+                    <?php wppz_aframe_render_acrylic_note(); ?>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="wppz-gp-total" role="status" aria-live="polite">
+            <span><?php echo esc_html__('Subtotal', 'wppluginzone-user-dashboard'); ?> <em><?php echo esc_html__('(excludes shipping)', 'wppluginzone-user-dashboard'); ?></em> :</span>
+            <strong data-wppz-subtotal><?php echo $base_price ? wp_kses_post(wc_price($base_price)) : esc_html('$0.00'); ?></strong>
+        </div>
+
+        <div class="wppz-gp-actions">
+            <button type="button" class="wppz-gp-action-button" data-wppz-open-upload="front"><?php echo esc_html__('Upload Front', 'wppluginzone-user-dashboard'); ?></button>
+            <button type="button" class="wppz-gp-action-button" data-wppz-open-designer><?php echo esc_html__('Design Online', 'wppluginzone-user-dashboard'); ?></button>
+        </div>
+
+        <div class="wppz-gp-artwork-status" data-wppz-artwork-status><?php echo esc_html__('No artwork selected', 'wppluginzone-user-dashboard'); ?></div>
+
+        <button type="button" class="wppz-gp-honest" data-wppz-open-honest>
+            <span class="wppz-gp-honest-icon" aria-hidden="true"></span>
+            <span><?php echo esc_html__('Honest Pricing Guarantee', 'wppluginzone-user-dashboard'); ?></span>
+        </button>
+
+        <?php wppz_aframe_render_upload_modal(); ?>
+        <?php wppz_aframe_render_designer_modal(); ?>
+        <?php wppz_aframe_render_honest_modal(); ?>
+    </div>
+    <?php
+}
+add_action('woocommerce_before_add_to_cart_button', 'wppz_render_aframe_product_configurator', 8);
+
+function wppz_aframe_render_upload_modal() {
+    ?>
+    <div class="wppz-gp-modal" data-wppz-upload-modal aria-hidden="true">
+        <div class="wppz-gp-modal-panel wppz-gp-upload-panel" role="dialog" aria-modal="true" aria-labelledby="wppz-gp-upload-title">
+            <div class="wppz-gp-upload-tabs">
+                <h3 id="wppz-gp-upload-title"><?php echo esc_html__('Upload', 'wppluginzone-user-dashboard'); ?></h3>
+                <span><?php echo esc_html__('My Files', 'wppluginzone-user-dashboard'); ?></span>
+                <button type="button" class="wppz-gp-modal-close" data-wppz-close-modal aria-label="<?php echo esc_attr__('Close', 'wppluginzone-user-dashboard'); ?>"></button>
+            </div>
+
+            <div class="wppz-gp-upload-body">
+                <input type="file" name="wppz_aframe_front_file" class="wppz-gp-file-input" data-wppz-file-input="front" accept=".tif,.tiff,.eps,.ai,.psd,.bmp,.gif,.jpg,.jpeg,.png,.pdf">
+                <div class="wppz-gp-dropzone" data-wppz-dropzone tabindex="0">
+                    <span class="wppz-gp-upload-cloud" aria-hidden="true"></span>
+                    <p data-wppz-upload-copy><?php echo esc_html__('Drag files to upload or', 'wppluginzone-user-dashboard'); ?></p>
+                    <button type="button" class="wppz-gp-browse" data-wppz-browse><?php echo esc_html__('Browse Files', 'wppluginzone-user-dashboard'); ?></button>
+                    <strong data-wppz-selected-file></strong>
+                </div>
+
+                <div class="wppz-gp-upload-guidelines">
+                    <strong><?php echo esc_html__('Acceptable File Formats:', 'wppluginzone-user-dashboard'); ?></strong>
+                    <span><?php echo esc_html__('Max. file upload size is 75MB (megabytes) per file', 'wppluginzone-user-dashboard'); ?></span>
+                    <div class="wppz-gp-format-list" aria-label="<?php echo esc_attr__('Accepted file formats', 'wppluginzone-user-dashboard'); ?>">
+                        <span>TIF</span><span>TIFF</span><span>EPS</span><span>AI</span><span>PSD</span><span>BMP</span><span>GIF</span><span>JPG</span><span>PNG</span><span>PDF</span>
+                    </div>
+                    <p><strong><?php echo esc_html__('Recommended:', 'wppluginzone-user-dashboard'); ?></strong> <?php echo esc_html__('To reduce file size, upload in .jpg format. For other formats, flatten all layers.', 'wppluginzone-user-dashboard'); ?></p>
+                </div>
+
+                <div class="wppz-gp-modal-actions">
+                    <button type="button" class="wppz-gp-action-button" data-wppz-confirm-upload><?php echo esc_html__('Done', 'wppluginzone-user-dashboard'); ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+function wppz_aframe_render_designer_modal() {
+    ?>
+    <div class="wppz-gp-modal" data-wppz-designer-modal aria-hidden="true">
+        <div class="wppz-gp-modal-panel wppz-gp-designer-panel" role="dialog" aria-modal="true" aria-labelledby="wppz-gp-designer-title">
+            <div class="wppz-gp-modal-header">
+                <h3 id="wppz-gp-designer-title"><?php echo esc_html__('Design Online', 'wppluginzone-user-dashboard'); ?></h3>
+                <button type="button" class="wppz-gp-modal-close" data-wppz-close-modal aria-label="<?php echo esc_attr__('Close', 'wppluginzone-user-dashboard'); ?>"></button>
+            </div>
+            <div class="wppz-gp-designer-grid">
+                <div class="wppz-gp-design-canvas" data-wppz-design-preview>
+                    <span data-wppz-design-headline><?php echo esc_html__('YOUR MESSAGE', 'wppluginzone-user-dashboard'); ?></span>
+                    <small data-wppz-design-subline><?php echo esc_html__('Acrylic Board', 'wppluginzone-user-dashboard'); ?></small>
+                </div>
+                <div class="wppz-gp-design-controls">
+                    <label for="wppz_design_template"><?php echo esc_html__('Template', 'wppluginzone-user-dashboard'); ?></label>
+                    <select id="wppz_design_template" data-wppz-design-template>
+                        <option value="Retail Promo"><?php echo esc_html__('Retail Promo', 'wppluginzone-user-dashboard'); ?></option>
+                        <option value="Directional"><?php echo esc_html__('Directional', 'wppluginzone-user-dashboard'); ?></option>
+                        <option value="Event Notice"><?php echo esc_html__('Event Notice', 'wppluginzone-user-dashboard'); ?></option>
+                    </select>
+
+                    <label for="wppz_design_headline"><?php echo esc_html__('Headline', 'wppluginzone-user-dashboard'); ?></label>
+                    <input id="wppz_design_headline" type="text" value="YOUR MESSAGE" maxlength="42" data-wppz-design-headline-input>
+
+                    <label for="wppz_design_subline"><?php echo esc_html__('Subline', 'wppluginzone-user-dashboard'); ?></label>
+                    <input id="wppz_design_subline" type="text" value="Acrylic Board" maxlength="58" data-wppz-design-subline-input>
+
+                    <label for="wppz_design_color"><?php echo esc_html__('Background', 'wppluginzone-user-dashboard'); ?></label>
+                    <select id="wppz_design_color" data-wppz-design-color>
+                        <option value="#ffffff"><?php echo esc_html__('White', 'wppluginzone-user-dashboard'); ?></option>
+                        <option value="#111827"><?php echo esc_html__('Black', 'wppluginzone-user-dashboard'); ?></option>
+                        <option value="#319244"><?php echo esc_html__('Green', 'wppluginzone-user-dashboard'); ?></option>
+                        <option value="#ff6a3d"><?php echo esc_html__('Orange', 'wppluginzone-user-dashboard'); ?></option>
+                    </select>
+
+                    <button type="button" class="wppz-gp-action-button" data-wppz-save-design><?php echo esc_html__('Use This Design', 'wppluginzone-user-dashboard'); ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+function wppz_aframe_render_honest_modal() {
+    ?>
+    <div class="wppz-gp-modal" data-wppz-honest-modal aria-hidden="true">
+        <div class="wppz-gp-modal-panel wppz-gp-info-panel" role="dialog" aria-modal="true" aria-labelledby="wppz-gp-honest-title">
+            <div class="wppz-gp-modal-header">
+                <h3 id="wppz-gp-honest-title"><?php echo esc_html__('Honest Pricing Guarantee', 'wppluginzone-user-dashboard'); ?></h3>
+                <button type="button" class="wppz-gp-modal-close" data-wppz-close-modal aria-label="<?php echo esc_attr__('Close', 'wppluginzone-user-dashboard'); ?>"></button>
+            </div>
+            <div class="wppz-gp-info-body">
+                <h4><?php echo esc_html__('Low Price Promise', 'wppluginzone-user-dashboard'); ?></h4>
+                <p><?php echo esc_html__('Your selected acrylic board configuration is carried into the cart so production can review the exact specifications with the order.', 'wppluginzone-user-dashboard'); ?></p>
+                <h4><?php echo esc_html__('Clear Order Details', 'wppluginzone-user-dashboard'); ?></h4>
+                <p><?php echo esc_html__('Material, thickness, shape, size, orientation, print side, hole drilling, accessories, quantity, uploaded artwork, and online design notes are stored with the cart item and order line item.', 'wppluginzone-user-dashboard'); ?></p>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+function wppz_enqueue_aframe_configurator_assets() {
+    if (!function_exists('is_product') || !is_product() || !wppz_is_aframe_product_context()) {
+        return;
+    }
+
+    wp_register_style('wppz-aframe-configurator', '', array(), '1.0.2');
+    wp_enqueue_style('wppz-aframe-configurator');
+    wp_add_inline_style('wppz-aframe-configurator', wppz_aframe_configurator_css());
+
+    wp_enqueue_script('jquery');
+    wp_register_script('wppz-aframe-configurator', '', array('jquery'), '1.0.2', true);
+    wp_enqueue_script('wppz-aframe-configurator');
+    wp_add_inline_script('wppz-aframe-configurator', wppz_aframe_configurator_js());
+}
+add_action('wp_enqueue_scripts', 'wppz_enqueue_aframe_configurator_assets', 30);
+
+function wppz_aframe_configurator_css() {
+    return <<<'CSS'
+.wppz-gp-configurator {
+    --wppz-gp-green: #8ec647;
+    --wppz-gp-dark-green: #319244;
+    --wppz-gp-text: #30343b;
+    --wppz-gp-muted: #6d7178;
+    --wppz-gp-border: #8ec647;
+    --wppz-gp-soft: #f7faf4;
+    color: var(--wppz-gp-text);
+    font-size: 16px;
+    line-height: 1.45;
+    max-width: 560px;
+    margin: 22px 0;
+}
+
+.single-product.postid-3305 .wapf-wrapper,
+.single-product.postid-3305 .wapf-field-container,
+.single-product.postid-3305 .wapf-product-totals {
+    display: none !important;
+}
+
+.single-product.postid-3305 form.cart .quantity {
+    display: none !important;
+}
+
+.wppz-gp-fields {
+    display: grid;
+    gap: 18px;
+}
+
+.wppz-gp-field,
+.wppz-gp-radio-field,
+.wppz-gp-orientation-field {
+    position: relative;
+    width: 100%;
+    min-height: 54px;
+    border: 2px solid var(--wppz-gp-border);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: none;
+    margin: 0;
+}
+
+.wppz-gp-field label,
+.wppz-gp-radio-field legend,
+.wppz-gp-orientation-field legend {
+    position: absolute;
+    top: -12px;
+    left: 16px;
+    z-index: 2;
+    margin: 0;
+    padding: 0 7px;
+    background: #fff;
+    color: var(--wppz-gp-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 20px;
+}
+
+.wppz-gp-field select {
+    width: 100%;
+    min-height: 52px;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: var(--wppz-gp-text);
+    font-size: 16px;
+    line-height: 24px;
+    padding: 13px 54px 13px 12px;
+    background-color: transparent;
+}
+
+.wppz-gp-field select:focus,
+.wppz-gp-design-controls input:focus,
+.wppz-gp-design-controls select:focus {
+    outline: 2px solid rgba(49, 146, 68, 0.18);
+    outline-offset: 2px;
+}
+
+.wppz-gp-valid {
+    position: absolute;
+    top: 14px;
+    right: 38px;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: var(--wppz-gp-green);
+}
+
+.wppz-gp-valid::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 4px;
+    width: 7px;
+    height: 12px;
+    border: solid #fff;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+.wppz-gp-required-badge {
+    position: absolute;
+    top: 17px;
+    right: 14px;
+    color: #eb0026;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 18px;
+}
+
+.wppz-gp-field.is-required.is-empty {
+    border-color: #eb0026;
+}
+
+.wppz-gp-field.is-required .wppz-gp-valid,
+.wppz-gp-field.is-required.is-complete .wppz-gp-required-badge {
+    display: none;
+}
+
+.wppz-gp-field.is-required.is-complete {
+    border-color: var(--wppz-gp-border);
+}
+
+.wppz-gp-field.is-required.is-complete .wppz-gp-valid {
+    display: block;
+}
+
+.wppz-gp-radio-field {
+    padding: 18px 14px 12px;
+}
+
+.wppz-gp-radio-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 24px;
+    align-items: center;
+}
+
+.wppz-gp-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+    margin: 0;
+    color: var(--wppz-gp-text);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.wppz-gp-radio-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.wppz-gp-radio-mark {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #9dcc69;
+    border-radius: 50%;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.wppz-gp-radio-option input:checked + .wppz-gp-radio-mark {
+    border-color: var(--wppz-gp-green);
+    box-shadow: inset 0 0 0 4px #fff;
+    background: var(--wppz-gp-green);
+}
+
+.wppz-gp-orientation-field {
+    min-height: 50px;
+}
+
+.wppz-gp-orientation-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 48px;
+}
+
+.wppz-gp-orientation-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    min-width: 0;
+    margin: 0;
+    color: #9a9a9a;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.wppz-gp-orientation-option:first-child {
+    border-right: 1px solid #d1d7cf;
+}
+
+.wppz-gp-orientation-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.wppz-gp-orientation-icon {
+    display: inline-block;
+    width: 28px;
+    height: 15px;
+    background: #e9e9e9;
+}
+
+.wppz-gp-orientation-icon.is-vertical {
+    width: 15px;
+    height: 28px;
+}
+
+.wppz-gp-orientation-option input:checked + .wppz-gp-orientation-icon {
+    background: #cfe8a9;
+}
+
+.wppz-gp-orientation-option input:checked ~ span:last-child {
+    color: var(--wppz-gp-text);
+}
+
+.wppz-gp-help {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    z-index: 3;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #666;
+    font-weight: 700;
+    box-shadow: none;
+    padding: 0;
+}
+
+.wppz-gp-help span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.wppz-gp-help-bubble {
+    position: absolute;
+    z-index: 99;
+    max-width: 320px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    background: #30343b;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.45;
+    box-shadow: 0 12px 28px rgba(0,0,0,.18);
+}
+
+.wppz-gp-note {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    min-height: 82px;
+    border: 1px solid var(--wppz-gp-border);
+    border-radius: 3px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.wppz-gp-note-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wppz-gp-green);
+    color: transparent;
+    font-size: 20px;
+    font-weight: 800;
+    font-family: Georgia, serif;
+    text-transform: lowercase;
+}
+
+.wppz-gp-note-icon::before {
+    content: "";
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.wppz-gp-note-icon::after {
+    content: "i";
+    position: relative;
+    color: var(--wppz-gp-green);
+    z-index: 1;
+}
+
+.wppz-gp-note p {
+    margin: 0;
+    padding: 13px 12px;
+    color: var(--wppz-gp-text);
+    font-size: 16px;
+    line-height: 1.32;
+}
+
+.wppz-gp-note strong {
+    font-weight: 800;
+}
+
+.wppz-gp-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 13px 14px;
+    border-radius: 4px;
+    background: #f3f4f5;
+    color: var(--wppz-gp-text);
+}
+
+.wppz-gp-total span {
+    font-size: 15px;
+}
+
+.wppz-gp-total em {
+    color: var(--wppz-gp-muted);
+    font-style: normal;
+}
+
+.wppz-gp-total strong {
+    min-width: 86px;
+    text-align: right;
+}
+
+.wppz-gp-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.wppz-gp-action-button,
+.wppz-gp-browse {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 44px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--wppz-gp-green);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 11px 18px;
+    text-align: center;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.wppz-gp-action-button:hover,
+.wppz-gp-action-button:focus,
+.wppz-gp-browse:hover,
+.wppz-gp-browse:focus {
+    background: var(--wppz-gp-dark-green);
+    color: #fff;
+}
+
+.wppz-gp-artwork-status {
+    min-height: 22px;
+    margin-top: 10px;
+    color: var(--wppz-gp-muted);
+    font-size: 14px;
+}
+
+.wppz-gp-honest {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px auto 0;
+    border: 0;
+    background: transparent;
+    color: var(--wppz-gp-text);
+    font-weight: 700;
+    box-shadow: none;
+    padding: 0;
+}
+
+.wppz-gp-honest-icon {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--wppz-gp-green);
+}
+
+.wppz-gp-honest-icon::before,
+.wppz-gp-honest-icon::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 11px;
+    border-top: 2px solid var(--wppz-gp-green);
+}
+
+.wppz-gp-honest-icon::after {
+    transform: rotate(90deg);
+}
+
+.wppz-gp-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0,0,0,.72);
+}
+
+.wppz-gp-modal[aria-hidden="false"] {
+    display: flex;
+}
+
+.wppz-gp-modal-panel {
+    width: min(690px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--wppz-gp-text);
+    box-shadow: 0 28px 70px rgba(0,0,0,.32);
+}
+
+.wppz-gp-upload-panel {
+    min-height: 560px;
+}
+
+.wppz-gp-upload-tabs {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    width: calc(100% - 40px);
+    height: 54px;
+    margin: 22px auto 8px;
+    border-radius: 999px;
+    background: #e7f3db;
+}
+
+.wppz-gp-upload-tabs h3,
+.wppz-gp-upload-tabs span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    border-radius: 999px;
+    color: var(--wppz-gp-text);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.wppz-gp-upload-tabs span {
+    background: var(--wppz-gp-green);
+}
+
+.wppz-gp-modal-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    padding: 18px 22px;
+    background: var(--wppz-gp-green);
+    color: #fff;
+}
+
+.wppz-gp-modal-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 22px;
+}
+
+.wppz-gp-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.wppz-gp-upload-tabs .wppz-gp-modal-close {
+    top: -11px;
+    right: -14px;
+}
+
+.wppz-gp-modal-close::before,
+.wppz-gp-modal-close::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 15px;
+    border-top: 2px solid currentColor;
+    color: #fff;
+}
+
+.wppz-gp-modal-close::before {
+    transform: rotate(45deg);
+}
+
+.wppz-gp-modal-close::after {
+    transform: rotate(-45deg);
+}
+
+.wppz-gp-upload-body {
+    padding: 22px 26px 28px;
+    text-align: center;
+}
+
+.wppz-gp-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.wppz-gp-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 210px;
+    border: 2px dashed #cbd6c1;
+    border-radius: 8px;
+    background: #fbfcfa;
+    padding: 24px;
+}
+
+.wppz-gp-dropzone.is-dragover {
+    border-color: var(--wppz-gp-green);
+    background: var(--wppz-gp-soft);
+}
+
+.wppz-gp-upload-cloud {
+    position: relative;
+    width: 74px;
+    height: 48px;
+    margin-bottom: 14px;
+    border-radius: 26px;
+    background: #d9e8ce;
+}
+
+.wppz-gp-upload-cloud::before,
+.wppz-gp-upload-cloud::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: #d9e8ce;
+}
+
+.wppz-gp-upload-cloud::before {
+    width: 36px;
+    height: 36px;
+    left: 10px;
+    top: -18px;
+}
+
+.wppz-gp-upload-cloud::after {
+    width: 46px;
+    height: 46px;
+    right: 8px;
+    top: -24px;
+}
+
+.wppz-gp-dropzone p {
+    margin: 0 0 8px;
+    color: var(--wppz-gp-muted);
+}
+
+.wppz-gp-dropzone strong {
+    display: block;
+    margin-top: 12px;
+    color: var(--wppz-gp-text);
+}
+
+.wppz-gp-upload-guidelines {
+    margin-top: 24px;
+    color: var(--wppz-gp-text);
+}
+
+.wppz-gp-upload-guidelines > span {
+    display: block;
+    color: var(--wppz-gp-muted);
+    margin: 2px 0 12px;
+}
+
+.wppz-gp-format-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px;
+    margin: 12px 0;
+}
+
+.wppz-gp-format-list span {
+    min-width: 42px;
+    border-radius: 4px;
+    background: #eef1f4;
+    color: #48505a;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 8px;
+}
+
+.wppz-gp-upload-guidelines p {
+    margin: 12px auto 0;
+    max-width: 520px;
+    color: var(--wppz-gp-muted);
+}
+
+.wppz-gp-modal-actions {
+    margin-top: 20px;
+}
+
+.wppz-gp-designer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 22px;
+    padding: 24px;
+}
+
+.wppz-gp-design-canvas {
+    display: flex;
+    min-height: 360px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #d7dce0;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+    text-align: center;
+    padding: 24px;
+}
+
+.wppz-gp-design-canvas span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.08;
+}
+
+.wppz-gp-design-canvas small {
+    display: block;
+    margin-top: 14px;
+    color: currentColor;
+    font-size: 18px;
+    opacity: .82;
+}
+
+.wppz-gp-design-controls {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.wppz-gp-design-controls label {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.wppz-gp-design-controls input,
+.wppz-gp-design-controls select {
+    min-height: 42px;
+    border: 2px solid var(--wppz-gp-green);
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+.wppz-gp-info-body {
+    padding: 24px;
+}
+
+.wppz-gp-info-body h4 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.wppz-gp-info-body p {
+    margin: 0 0 18px;
+    color: var(--wppz-gp-muted);
+}
+
+@media (max-width: 680px) {
+    .wppz-gp-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .wppz-gp-radio-options {
+        display: grid;
+        gap: 12px;
+    }
+
+    .wppz-gp-designer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wppz-gp-modal {
+        padding: 12px;
+    }
+}
+CSS;
+}
+
+function wppz_aframe_configurator_js() {
+    return <<<'JS'
+(function($) {
+    function formatMoney(value, symbol) {
+        var amount = Number(value || 0);
+        return symbol + amount.toFixed(2);
+    }
+
+    function closeModal($modal) {
+        $modal.attr('aria-hidden', 'true');
+        $('body').removeClass('wppz-gp-modal-open');
+    }
+
+    function openModal($modal) {
+        $modal.attr('aria-hidden', 'false');
+        $('body').addClass('wppz-gp-modal-open');
+    }
+
+    function updateDesignPreview($root) {
+        var headline = $root.find('[data-wppz-design-headline-input]').val() || 'YOUR MESSAGE';
+        var subline = $root.find('[data-wppz-design-subline-input]').val() || 'Acrylic Board';
+        var color = $root.find('[data-wppz-design-color]').val() || '#ffffff';
+        var dark = color === '#111827' || color === '#319244' || color === '#ff6a3d';
+
+        $root.find('[data-wppz-design-headline]').text(headline);
+        $root.find('[data-wppz-design-subline]').text(subline);
+        $root.find('[data-wppz-design-preview]').css({
+            backgroundColor: color,
+            color: dark ? '#ffffff' : '#111827'
+        });
+    }
+
+    function setArtworkStatus($root, status, method) {
+        $root.find('[data-wppz-artwork-status]').text(status || 'No artwork selected');
+        $root.find('[data-wppz-artwork-method]').val(method || 'No artwork selected');
+    }
+
+    var sizeOptionsByShape = {
+        'Rectangle': ['6" x 18"', '6" x 20"', '6" x 24"', '6" x 30"', '8" x 10"', '8" x 12"', '8.5" x 11"', '9" x 24"', '10" x 12"', '10" x 14"', '10" x 18"', '10" x 20"', '11" x 14"', '11" x 19"', '12" x 16"', '12" x 18"', '12" x 24"', '16" x 20"', '16" x 23"', '18" x 20"', '18" x 24"', '18" x 30"', '18" x 36"', '20" x 30"', '20" x 40"', '22" x 23"', '22" x 28"', '24" x 30"', '24" x 36"'],
+        'Rounded Rectangle': ['6" x 18"', '6" x 20"', '6" x 24"', '6" x 30"', '8" x 10"', '8" x 12"', '8.5" x 11"', '9" x 24"', '10" x 12"', '10" x 14"', '10" x 18"', '10" x 20"', '11" x 14"', '11" x 19"', '12" x 16"', '12" x 18"', '12" x 24"', '16" x 20"', '16" x 23"', '18" x 20"', '18" x 24"', '18" x 30"', '18" x 36"', '20" x 30"', '20" x 40"', '22" x 23"', '22" x 28"', '24" x 30"', '24" x 36"'],
+        'Square': ['8" x 8"', '10" x 10"', '12" x 12"', '14" x 14"', '16" x 16"', '18" x 18"', '20" x 20"', '23" x 23"', '24" x 24"'],
+        'Rounded Square': ['8" x 8"', '10" x 10"', '12" x 12"', '14" x 14"', '16" x 16"', '18" x 18"', '20" x 20"', '23" x 23"', '24" x 24"'],
+        'Circle': ['12" x 12"', '16" x 16"', '18" x 18"', '23" x 23"', '24" x 24"'],
+        'Half Circle': ['8" x 10"', '9" x 18"', '11" x 14"', '18" x 24"', '20" x 30"', '20" x 36"', '22" x 28"', '24" x 36"', '12" x 24"', '14" x 28"', '15" x 30"', '18" x 36"'],
+        'Half Arch': ['8" x 10"', '9" x 18"', '11" x 14"', '18" x 24"', '20" x 30"', '20" x 36"', '22" x 28"', '24" x 36"'],
+        'House': ['23" x 23"'],
+        'Apartment': ['23" x 23"'],
+        'Star': ['22" x 23"'],
+        'Octagon': ['23" x 23"'],
+        'Arrow': ['18" x 24"'],
+        'Oval': ['16" x 23"']
+    };
+    var holeOptionsByShape = {
+        'Rectangle': ['None', '4 Corners', 'Top 2 Corners', 'Top & Bottom Center', '4 Corners & Top & Bottom Center'],
+        'Square': ['None', '4 Corners', 'Top 2 Corners', 'Top & Bottom Center', '4 Corners & Top & Bottom Center']
+    };
+
+    function renderSelectOptions($select, options, selected) {
+        $select.empty().append($('<option>', {
+            value: '',
+            text: 'Please select an option',
+            hidden: true
+        }));
+
+        options.forEach(function(option) {
+            $select.append($('<option>', {
+                value: option,
+                text: option,
+                selected: option === selected
+            }));
+        });
+    }
+
+    function syncShapeDependentFields($root) {
+        var shape = $root.find('[name="wppz_aframe_config[shape]"]').val() || 'Rectangle';
+        var sizes = sizeOptionsByShape[shape] || sizeOptionsByShape.Rectangle;
+        var $size = $root.find('[name="wppz_aframe_config[size]"]');
+        var selectedSize = sizes.indexOf($size.val()) !== -1 ? $size.val() : sizes[0];
+        var holes = holeOptionsByShape[shape] || [];
+        var $holeField = $root.find('[data-wppz-field="hole_drilling"]');
+        var $hole = $root.find('[name="wppz_aframe_config[hole_drilling]"]');
+        var selectedHole = holes.indexOf($hole.val()) !== -1 ? $hole.val() : 'None';
+
+        renderSelectOptions($size, sizes, selectedSize);
+        $size.val(selectedSize);
+
+        if (holes.length) {
+            renderSelectOptions($hole, holes, selectedHole);
+            $hole.val(selectedHole);
+            $holeField.show();
+        } else {
+            renderSelectOptions($hole, ['None'], 'None');
+            $hole.val('None');
+            $holeField.hide();
+        }
+    }
+
+    function selectedQuantity($root) {
+        return parseInt($root.find('[name="wppz_aframe_config[quantity]"]').val(), 10) || 0;
+    }
+
+    function updateRequiredFields($root) {
+        $root.find('[data-wppz-required="true"]').each(function() {
+            var $field = $(this);
+            var value = $field.find('select').val() || $field.find('input:checked').val() || '';
+            $field.toggleClass('is-empty', !value);
+            $field.toggleClass('is-complete', !!value);
+        });
+    }
+
+    function ensureCartQuantityInput($root) {
+        var $form = $root.closest('form.cart');
+        var $input = $form.find('input.qty[name="quantity"], input[name="quantity"]').first();
+
+        if (!$input.length) {
+            $input = $('<input>', {
+                type: 'hidden',
+                name: 'quantity',
+                value: '1',
+                'data-wppz-cart-quantity': 'true'
+            }).appendTo($form);
+        }
+
+        return $input;
+    }
+
+    function updateSubtotal($root) {
+        var basePrice = parseFloat($root.attr('data-base-price')) || 0;
+        var qty = selectedQuantity($root);
+        var symbol = $root.attr('data-currency-symbol') || '$';
+        $root.find('[data-wppz-subtotal]').text(formatMoney(basePrice * qty, symbol));
+    }
+
+    function syncCartQuantity($root) {
+        var qty = selectedQuantity($root);
+
+        if (qty > 0) {
+            ensureCartQuantityInput($root).val(qty).trigger('change');
+        }
+
+        updateRequiredFields($root);
+        updateSubtotal($root);
+    }
+
+    function setActiveUploadSide($root, side) {
+        side = side === 'back' ? 'front' : side;
+        $root.data('wppzActiveUploadSide', side);
+        var sideLabel = side === 'back' ? 'Back' : 'Front';
+        var input = $root.find('[data-wppz-file-input="' + side + '"]')[0];
+        var fileName = input && input.files ? input.files[0] : null;
+        $root.find('[data-wppz-upload-copy]').text('Drag ' + sideLabel.toLowerCase() + ' file to upload or');
+        $root.find('[data-wppz-selected-file]').text(fileName ? fileName.name : '');
+    }
+
+    function applyFileToInput(input, files) {
+        if (!files || !files.length) {
+            return;
+        }
+
+        try {
+            var transfer = new DataTransfer();
+            transfer.items.add(files[0]);
+            input.files = transfer.files;
+        } catch (e) {
+            return;
+        }
+    }
+
+    $(function() {
+        $('.wppz-gp-configurator').each(function() {
+            var $root = $(this);
+            var $form = $root.closest('form.cart');
+
+            if ($form.length) {
+                $form.attr('enctype', 'multipart/form-data');
+            }
+
+            syncShapeDependentFields($root);
+            syncCartQuantity($root);
+            updateDesignPreview($root);
+
+            $root.on('change', 'select, input[type="radio"]', function() {
+                syncShapeDependentFields($root);
+                syncCartQuantity($root);
+            });
+
+            $form.on('change input', 'input.qty', function() {
+                updateSubtotal($root);
+            });
+
+            $root.on('click', '[data-wppz-help]', function() {
+                var $button = $(this);
+                $('.wppz-gp-help-bubble').remove();
+
+                var $bubble = $('<div class="wppz-gp-help-bubble" role="status"></div>').text($button.data('wppz-help'));
+                $button.after($bubble);
+                setTimeout(function() {
+                    $bubble.fadeOut(160, function() {
+                        $(this).remove();
+                    });
+                }, 4800);
+            });
+
+            $root.on('click', '[data-wppz-open-upload]', function() {
+                var side = $(this).data('wppz-open-upload') || 'front';
+                setActiveUploadSide($root, side);
+                openModal($root.find('[data-wppz-upload-modal]'));
+            });
+
+            $root.on('click', '[data-wppz-open-designer]', function() {
+                openModal($root.find('[data-wppz-designer-modal]'));
+            });
+
+            $root.on('click', '[data-wppz-open-honest]', function() {
+                openModal($root.find('[data-wppz-honest-modal]'));
+            });
+
+            $root.on('click', '[data-wppz-close-modal]', function() {
+                closeModal($(this).closest('.wppz-gp-modal'));
+            });
+
+            $root.on('click', '.wppz-gp-modal', function(event) {
+                if (event.target === this) {
+                    closeModal($(this));
+                }
+            });
+
+            $root.on('click', '[data-wppz-browse]', function() {
+                var side = $root.data('wppzActiveUploadSide') || 'front';
+                $root.find('[data-wppz-file-input="' + side + '"]').trigger('click');
+            });
+
+            $root.on('change', '[data-wppz-file-input]', function() {
+                var side = $(this).data('wppz-file-input') || 'front';
+                setActiveUploadSide($root, side);
+
+                if (this.files && this.files[0]) {
+                    setArtworkStatus($root, 'Front artwork selected: ' + this.files[0].name, 'Upload Front');
+                }
+            });
+
+            $root.on('dragover', '[data-wppz-dropzone]', function(event) {
+                event.preventDefault();
+                $(this).addClass('is-dragover');
+            });
+
+            $root.on('dragleave', '[data-wppz-dropzone]', function(event) {
+                event.preventDefault();
+                $(this).removeClass('is-dragover');
+            });
+
+            $root.on('drop', '[data-wppz-dropzone]', function(event) {
+                event.preventDefault();
+                $(this).removeClass('is-dragover');
+
+                var side = $root.data('wppzActiveUploadSide') || 'front';
+                var input = $root.find('[data-wppz-file-input="' + side + '"]')[0];
+                var files = event.originalEvent.dataTransfer.files;
+                applyFileToInput(input, files);
+                $(input).trigger('change');
+            });
+
+            $root.on('click', '[data-wppz-confirm-upload]', function() {
+                var frontFile = $root.find('[data-wppz-file-input="front"]')[0].files[0];
+
+                if (frontFile) {
+                    setArtworkStatus($root, 'Front artwork selected: ' + frontFile.name, 'Upload Front');
+                }
+
+                closeModal($root.find('[data-wppz-upload-modal]'));
+            });
+
+            $root.on('input change', '[data-wppz-design-template], [data-wppz-design-headline-input], [data-wppz-design-subline-input], [data-wppz-design-color]', function() {
+                updateDesignPreview($root);
+            });
+
+            $root.on('click', '[data-wppz-save-design]', function() {
+                var data = {
+                    template: $root.find('[data-wppz-design-template]').val(),
+                    headline: $root.find('[data-wppz-design-headline-input]').val(),
+                    subline: $root.find('[data-wppz-design-subline-input]').val(),
+                    background: $root.find('[data-wppz-design-color]').val()
+                };
+                var summary = data.template + ': ' + data.headline + ' / ' + data.subline;
+
+                $root.find('[data-wppz-design-summary]').val(summary);
+                $root.find('[data-wppz-design-data]').val(JSON.stringify(data));
+                setArtworkStatus($root, 'Online design selected: ' + data.template, 'Design Online');
+                closeModal($root.find('[data-wppz-designer-modal]'));
+            });
+        });
+    });
+})(jQuery);
+JS;
+}
+
+function wppz_aframe_validate_uploaded_file($file_key, $label) {
+    if (empty($_FILES[$file_key]) || empty($_FILES[$file_key]['name'])) {
+        return true;
+    }
+
+    if (!empty($_FILES[$file_key]['error']) && UPLOAD_ERR_OK !== (int) $_FILES[$file_key]['error']) {
+        wc_add_notice(sprintf('%s could not be uploaded. Please choose the file again.', $label), 'error');
+        return false;
+    }
+
+    $allowed_extensions = array('tif', 'tiff', 'eps', 'ai', 'psd', 'bmp', 'gif', 'jpg', 'jpeg', 'png', 'pdf');
+    $extension = strtolower(pathinfo(sanitize_file_name(wp_unslash($_FILES[$file_key]['name'])), PATHINFO_EXTENSION));
+
+    if (!in_array($extension, $allowed_extensions, true)) {
+        wc_add_notice(sprintf('%s must be one of these formats: TIF, TIFF, EPS, AI, PSD, BMP, GIF, JPG, PNG, or PDF.', $label), 'error');
+        return false;
+    }
+
+    if (!empty($_FILES[$file_key]['size']) && (int) $_FILES[$file_key]['size'] > 75 * 1024 * 1024) {
+        wc_add_notice(sprintf('%s must be 75MB or smaller.', $label), 'error');
+        return false;
+    }
+
+    return true;
+}
+
+function wppz_aframe_add_to_cart_validation($passed, $product_id) {
+    if (!$passed || !wppz_is_aframe_product_context($product_id)) {
+        return $passed;
+    }
+
+    if (empty($_POST['wppz_aframe_config_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['wppz_aframe_config_nonce'])), 'wppz_aframe_config')) {
+        wc_add_notice(__('Please refresh the product page and try again.', 'wppluginzone-user-dashboard'), 'error');
+        return false;
+    }
+
+    $raw_config = isset($_POST['wppz_aframe_config']) ? wp_unslash($_POST['wppz_aframe_config']) : array();
+    $quantity = isset($raw_config['quantity']) ? absint($raw_config['quantity']) : 0;
+
+    if ($quantity < 1 || $quantity > 150) {
+        wc_add_notice(__('Please select a quantity.', 'wppluginzone-user-dashboard'), 'error');
+        return false;
+    }
+
+    $front_valid = wppz_aframe_validate_uploaded_file('wppz_aframe_front_file', __('Front artwork', 'wppluginzone-user-dashboard'));
+
+    return $front_valid;
+}
+add_filter('woocommerce_add_to_cart_validation', 'wppz_aframe_add_to_cart_validation', 20, 2);
+
+function wppz_aframe_upload_mimes() {
+    return array(
+        'jpg|jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'bmp' => 'image/bmp',
+        'tif|tiff' => 'image/tiff',
+        'pdf' => 'application/pdf',
+        'eps|ai' => 'application/postscript',
+        'psd' => 'image/vnd.adobe.photoshop',
+    );
+}
+
+function wppz_aframe_handle_uploaded_file($file_key, $side_label) {
+    if (empty($_FILES[$file_key]) || empty($_FILES[$file_key]['name'])) {
+        return null;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+
+    $uploaded = wp_handle_upload(
+        $_FILES[$file_key],
+        array(
+            'test_form' => false,
+            'mimes' => wppz_aframe_upload_mimes(),
+        )
+    );
+
+    if (!empty($uploaded['error'])) {
+        wc_add_notice(sprintf('%s upload failed: %s', $side_label, $uploaded['error']), 'error');
+        return null;
+    }
+
+    return array(
+        'side' => $side_label,
+        'name' => sanitize_file_name(wp_unslash($_FILES[$file_key]['name'])),
+        'url' => esc_url_raw($uploaded['url']),
+        'type' => sanitize_text_field($uploaded['type']),
+        'size' => isset($_FILES[$file_key]['size']) ? absint($_FILES[$file_key]['size']) : 0,
+    );
+}
+
+function wppz_aframe_add_cart_item_data($cart_item_data, $product_id) {
+    if (!wppz_is_aframe_product_context($product_id)) {
+        return $cart_item_data;
+    }
+
+    $raw_config = isset($_POST['wppz_aframe_config']) ? wp_unslash($_POST['wppz_aframe_config']) : array();
+    $cart_item_data['wppz_aframe_config'] = wppz_aframe_sanitize_config($raw_config);
+
+    if (!empty($_POST['wppz_aframe_design_data'])) {
+        $cart_item_data['wppz_aframe_design_data'] = sanitize_textarea_field(wp_unslash($_POST['wppz_aframe_design_data']));
+    }
+
+    $uploaded_files = array();
+    $front_file = wppz_aframe_handle_uploaded_file('wppz_aframe_front_file', 'Front Artwork');
+
+    if ($front_file) {
+        $uploaded_files[] = $front_file;
+    }
+
+    if ($uploaded_files) {
+        $cart_item_data['wppz_aframe_files'] = $uploaded_files;
+    }
+
+    $cart_item_data['wppz_aframe_unique_key'] = md5(wp_json_encode($cart_item_data['wppz_aframe_config']) . microtime());
+
+    return $cart_item_data;
+}
+add_filter('woocommerce_add_cart_item_data', 'wppz_aframe_add_cart_item_data', 20, 2);
+
+function wppz_aframe_restore_cart_item_from_session($cart_item, $values) {
+    foreach (array('wppz_aframe_config', 'wppz_aframe_files', 'wppz_aframe_design_data', 'wppz_aframe_unique_key') as $key) {
+        if (isset($values[$key])) {
+            $cart_item[$key] = $values[$key];
+        }
+    }
+
+    return $cart_item;
+}
+add_filter('woocommerce_get_cart_item_from_session', 'wppz_aframe_restore_cart_item_from_session', 20, 2);
+
+function wppz_aframe_get_item_data($item_data, $cart_item) {
+    if (empty($cart_item['wppz_aframe_config'])) {
+        return $item_data;
+    }
+
+    $labels = wppz_aframe_config_labels();
+
+    foreach ($cart_item['wppz_aframe_config'] as $key => $value) {
+        if ('' === $value || !isset($labels[$key])) {
+            continue;
+        }
+
+        $item_data[] = array(
+            'key' => $labels[$key],
+            'value' => wc_clean($value),
+            'display' => esc_html($value),
+        );
+    }
+
+    if (!empty($cart_item['wppz_aframe_files'])) {
+        foreach ($cart_item['wppz_aframe_files'] as $file) {
+            $name = !empty($file['name']) ? $file['name'] : __('Uploaded file', 'wppluginzone-user-dashboard');
+            $item_data[] = array(
+                'key' => !empty($file['side']) ? $file['side'] : __('Artwork', 'wppluginzone-user-dashboard'),
+                'value' => wc_clean($name),
+                'display' => esc_html($name),
+            );
+        }
+    }
+
+    return $item_data;
+}
+add_filter('woocommerce_get_item_data', 'wppz_aframe_get_item_data', 20, 2);
+
+function wppz_aframe_add_order_item_meta($item, $cart_item_key, $values) {
+    if (empty($values['wppz_aframe_config'])) {
+        return;
+    }
+
+    $labels = wppz_aframe_config_labels();
+
+    foreach ($values['wppz_aframe_config'] as $key => $value) {
+        if ('' === $value || !isset($labels[$key])) {
+            continue;
+        }
+
+        $item->add_meta_data($labels[$key], $value, true);
+    }
+
+    if (!empty($values['wppz_aframe_design_data'])) {
+        $item->add_meta_data('Online Design Data', $values['wppz_aframe_design_data'], true);
+    }
+
+    if (!empty($values['wppz_aframe_files'])) {
+        foreach ($values['wppz_aframe_files'] as $file) {
+            if (empty($file['url'])) {
+                continue;
+            }
+
+            $label = !empty($file['side']) ? $file['side'] . ' URL' : 'Artwork URL';
+            $item->add_meta_data($label, esc_url_raw($file['url']), true);
+        }
+    }
+}
+add_action('woocommerce_checkout_create_order_line_item', 'wppz_aframe_add_order_item_meta', 20, 3);
 ?>
